@@ -1,0 +1,16 @@
+{
+  "quarter": "Q3 2026",
+  "updatedAt": null,
+  "reps": [
+    { "id": "dina",  "name": "Dina Bash",    "goal": 12, "current": 0, "mql": 0, "active": true },
+    { "id": "kylie", "name": "Kylie Shelon", "goal": 11, "current": 0, "mql": 0, "active": true },
+    { "id": "jade",  "name": "Jade Palmer",  "goal": 11, "current": 0, "mql": 0, "active": true },
+    { "id": "tom",   "name": "Tom Dauber",   "goal": 17, "current": 0, "mql": 1, "active": true },
+    { "id": "dan",   "name": "Dan G",        "goal": 15, "current": 0, "mql": 0, "active": true }
+  ],
+  "verticals": [
+    { "id": "nongaming", "name": "AppHarbr Non-Gaming", "goal": 23, "current": 0 },
+    { "id": "gaming",    "name": "AppHarbr Gaming",     "goal": 32, "current": 0 },
+    { "id": "geoedge",   "name": "GeoEdge",             "goal": 11, "current": 0 }
+  ]
+}
