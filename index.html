@@ -143,7 +143,7 @@
   .leaderboard{ margin-top:6px; display:flex; flex-direction:column; justify-content:flex-start; gap:10px; flex:1; min-height:0; overflow-y:auto; }
   .lb-row{
     display:grid;
-    grid-template-columns: 26px 36px minmax(0,1fr) minmax(60px,140px) 46px 56px;
+    grid-template-columns: 26px 36px minmax(0,1fr) minmax(60px,160px) 50px;
     align-items:center; gap:14px;
     padding:10px 14px; border-radius:10px; border:1px solid rgba(255,255,255,.06);
     background: rgba(255,255,255,.02);
@@ -160,11 +160,17 @@
   .lb-bar-track{ height:8px; border-radius:5px; background:rgba(255,255,255,.08); overflow:hidden; position:relative; width:100%; }
   .lb-bar-fill{ height:100%; border-radius:5px; transition: width .6s ease; }
   .lb-pct{ font-weight:800; font-size:14px; text-align:right; }
-  .lb-mql{
-    text-align:center; font-size:10px; letter-spacing:1px; color:var(--muted);
-    border-left:1px solid rgba(255,255,255,.08); padding-left:12px;
+  /* smaller secondary MQL panel */
+  .right-col .panel.panel-mql{ padding:16px 20px; }
+  .panel-mql h2{ margin-bottom:10px; font-size:12px; }
+  .mql-total{ margin-left:auto; color:#b9c7d8; font-weight:700; letter-spacing:1px; }
+  .mql-grid{ display:grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap:8px; }
+  .mql-chip{
+    display:flex; align-items:center; justify-content:space-between; gap:8px;
+    padding:6px 10px; border-radius:8px; border:1px solid rgba(255,255,255,.06);
+    background: rgba(255,255,255,.02); font-size:12px; letter-spacing:.5px;
   }
-  .lb-mql b{ display:block; font-size:14px; color:#b9c7d8; font-weight:700; }
+  .mql-chip .mql-n{ font-weight:800; font-size:14px; color:#b9c7d8; }
 
   .verticals{ display:flex; flex-direction:column; justify-content:flex-start; gap:18px; margin-top:6px; flex:1; min-height:0; overflow-y:auto; }
   .v-row .v-top{ display:flex; justify-content:space-between; font-size:13px; letter-spacing:1px; margin-bottom:8px; }
@@ -230,19 +236,24 @@
 <main>
   <div class="layout">
     <section class="panel pie-wrap">
-      <h2>Q3 2026 · % TO GOAL BY REP</h2>
+      <h2 id="pieTitle">SQLs · % TO GOAL BY REP</h2>
       <svg id="pieChart" viewBox="0 0 560 560"></svg>
     </section>
 
     <div class="right-col">
       <section class="panel panel-snug">
-        <h2>VERTICAL BREAKDOWN · % TO Q3 GOAL</h2>
+        <h2 id="vertTitle">VERTICAL BREAKDOWN · % TO GOAL</h2>
         <div class="verticals" id="verticals"></div>
       </section>
 
       <section class="panel panel-fill">
-        <h2>TEAM LEADERBOARD</h2>
+        <h2 id="lbTitle">SQL LEADERBOARD</h2>
         <div class="leaderboard" id="leaderboard"></div>
+      </section>
+
+      <section class="panel panel-snug panel-mql">
+        <h2 id="mqlTitle">MQLs <span class="mql-total" id="mqlTotal"></span></h2>
+        <div class="mql-grid" id="mqlGrid"></div>
       </section>
     </div>
   </div>
@@ -274,19 +285,19 @@
 
 <script>
 const FALLBACK_DATA = {
-  quarter: 'Q3 2026',
+  quarter: 'Q4 2026',
   updatedAt: null,
   reps: [
-    { id:'dina',  name:'Dina Bash',    goal:12, current:0, mql:0, active:true },
-    { id:'kylie', name:'Kylie Shelon', goal:11, current:0, mql:0, active:true },
-    { id:'jade',  name:'Jade Palmer',  goal:11, current:0, mql:0, active:true },
-    { id:'tom',   name:'Tom Dauber',   goal:17, current:0, mql:1, active:true },
-    { id:'dan',   name:'Dan G',        goal:15, current:0, mql:0, active:true }
+    { id:'dina',   name:'Dina',   goal:12, current:0, mql:0, active:true },
+    { id:'jade',   name:'Jade',   goal:11, current:0, mql:0, active:true },
+    { id:'jenna',  name:'Jenna',  goal:8,  current:0, mql:0, active:true },
+    { id:'rachel', name:'Rachel', goal:6,  current:0, mql:0, active:true },
+    { id:'kylie',  name:'Kylie',  goal:11, current:0, mql:0, active:true },
+    { id:'tom',    name:'Tom',    goal:12, current:0, mql:0, active:true }
   ],
   verticals: [
-    { id:'nongaming', name:'AppHarbr Non-Gaming', goal:23, current:0 },
-    { id:'gaming',    name:'AppHarbr Gaming',     goal:32, current:0 },
-    { id:'geoedge',   name:'GeoEdge',             goal:11, current:0 }
+    { id:'appharbr', name:'AppHarbr', goal:55, current:0 },
+    { id:'geoedge',  name:'GeoEdge',  goal:11, current:0 }
   ]
 };
 
@@ -425,9 +436,9 @@ function renderLeaderboard(){
 
   el.innerHTML = reps.map((r, idx) => {
     const rankClass = idx===0 ? 'gold' : idx===1 ? 'silver' : idx===2 ? 'bronze' : '';
-    const initials = r.name.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+    const parts = r.name.trim().split(/\s+/);
+    const initials = (parts.length > 1 ? parts.map(w=>w[0]).join('') : r.name.slice(0,2)).slice(0,2).toUpperCase();
     const width = clamp(r.pct, 0, 100);
-    const mqlCount = r.mql || 0;
     return `
       <div class="lb-row">
         <div class="lb-rank ${rankClass}">#${idx+1}</div>
@@ -435,7 +446,6 @@ function renderLeaderboard(){
         <div class="lb-name">${r.name}</div>
         <div class="lb-bar-track"><div class="lb-bar-fill" style="width:${width}%; background:${tierColor(r.pct)}; box-shadow:0 0 10px ${tierColor(r.pct)};"></div></div>
         <div class="lb-pct" style="color:${tierColor(r.pct)}">${Math.round(r.pct)}%</div>
-        <div class="lb-mql" title="Marketing Qualified Leads (secondary metric)"><b>${mqlCount}</b>MQL${mqlCount === 1 ? '' : 's'}</div>
       </div>
     `;
   }).join('');
@@ -451,7 +461,7 @@ function renderVerticals(){
       <div class="v-row">
         <div class="v-top">
           <span class="v-name">${v.name}</span>
-          <span class="v-pct" style="color:${color}">${Math.round(p)}% to Q3 Goal</span>
+          <span class="v-pct" style="color:${color}">${Math.round(p)}% to ${quarterShort()} Goal</span>
         </div>
         <div class="v-track"><div class="v-fill" style="width:${width}%; background:linear-gradient(90deg, ${color}88, ${color});"></div></div>
       </div>
@@ -459,9 +469,29 @@ function renderVerticals(){
   }).join('');
 }
 
+function quarterShort(){ return (DATA.quarter || 'Q4 2026').split(' ')[0]; }
+
+function renderMQLs(){
+  const reps = DATA.reps.filter(r => r.active !== false)
+    .map(r => ({...r, color: REP_PALETTE[DATA.reps.indexOf(r) % REP_PALETTE.length]}))
+    .sort((a,b) => (b.mql||0) - (a.mql||0));
+  const total = reps.reduce((s,r) => s + (r.mql||0), 0);
+  document.getElementById('mqlTotal').textContent = 'TEAM TOTAL ' + total;
+  document.getElementById('mqlGrid').innerHTML = reps.map(r =>
+    `<div class="mql-chip"><span style="color:${r.color}">${r.name}</span><span class="mql-n">${r.mql || 0}</span></div>`
+  ).join('');
+}
+
 function renderAll(){
+  const q = DATA.quarter || 'Q4 2026';
+  document.getElementById('pieTitle').textContent = 'SQLs · ' + q + ' · % TO GOAL BY REP';
+  document.getElementById('vertTitle').textContent = 'VERTICAL BREAKDOWN · % TO ' + quarterShort() + ' GOAL';
+  document.getElementById('lbTitle').textContent = 'SQL LEADERBOARD · ' + q;
+  document.getElementById('mqlTitle').firstChild.textContent = 'MQLs · ' + q + ' ';
+  document.title = 'BDA Team Performance // ' + q;
   renderPie();
   renderLeaderboard();
+  renderMQLs();
   renderVerticals();
   const lu = document.getElementById('lastUpdated');
   lu.textContent = DATA.updatedAt ? new Date(DATA.updatedAt).toLocaleString() : 'never (using seed data)';

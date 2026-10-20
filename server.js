@@ -4,7 +4,7 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DATA_FILE = path.join(__dirname, 'data.json');
+const DATA_FILE = process.env.DATA_FILE || path.join(__dirname, 'data.json');
 const SEED_FILE = path.join(__dirname, 'seed-data.json');
 
 app.use(express.json());
@@ -58,6 +58,24 @@ app.post('/api/data', (req, res) => {
   body.updatedAt = new Date().toISOString();
   writeData(body);
   res.json({ ok: true, updatedAt: body.updatedAt });
+});
+
+// Salesforce feed: body = { counts: [{ name: 'Dina Bash', sql: 2, mql: 2 }, ...] }
+// Updates only SQL/MQL counts (goals, names, verticals are left untouched).
+// Reps missing from the payload are set to 0 (Salesforce omits reps with no records).
+app.post('/api/sync', (req, res) => {
+  const counts = req.body && req.body.counts;
+  if (!Array.isArray(counts)) return res.status(400).json({ error: 'counts array required' });
+  const first = s => String(s || '').trim().split(/\s+/)[0].toLowerCase();
+  const data = readData();
+  data.reps.forEach(rep => {
+    const hit = counts.find(c => first(c.name) === first(rep.name));
+    rep.current = hit ? Number(hit.sql) || 0 : 0;
+    rep.mql = hit ? Number(hit.mql) || 0 : 0;
+  });
+  data.updatedAt = new Date().toISOString();
+  writeData(data);
+  res.json({ ok: true, updatedAt: data.updatedAt });
 });
 
 app.post('/api/reset', (req, res) => {
